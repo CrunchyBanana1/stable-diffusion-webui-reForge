@@ -11,8 +11,8 @@ Tutorial from: https://github.com/continue-revolution/sd-webui-animatediff/blob/
 If you have already had OG A1111 and you are familiar with git, I highly recommend running the following commands in your terminal in `/path/to/stable-diffusion-webui`
 ```bash
 git remote add forge https://github.com/Panchovix/stable-diffusion-webui-forge
-git branch Panchovix/dev_upstream_a1111
-git checkout Panchovix/dev_upstream_a1111
+git branch Panchovix/dev_upstream_a1111_customschedulers
+git checkout Panchovix/dev_upstream_a1111_customschedulers
 git fetch forge
 git branch -u forge/main
 git pull
@@ -26,7 +26,7 @@ If you know what you are doing, you can install Forge using same method as SD-We
 ```bash
 git clone https://github.com/Panchovix/stable-diffusion-webui-forge.git
 cd stable-diffusion-webui-forge
-git checkout dev_upstream_a1111
+git checkout dev_upstream_a1111_customschedulers
 ```
 Then run webui-user.bat or webui-user.sh.
 
