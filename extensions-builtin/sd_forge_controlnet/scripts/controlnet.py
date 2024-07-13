@@ -9,6 +9,7 @@ from modules import shared, script_callbacks, masking, images
 from modules.ui_components import InputAccordion
 from modules.api.api import decode_base64_to_image
 import gradio as gr
+import time
 
 from lib_controlnet import global_state, external_code
 from lib_controlnet.external_code import ControlNetUnit, InputMode
@@ -110,6 +111,7 @@ class ControlNetForForgeOfficial(scripts.Script):
             ControlNetUnit.from_dict(unit) if isinstance(unit, dict) else unit
             for unit in units
         ]
+        units = [unit for unit in units if unit is not None]
         assert all(isinstance(unit, ControlNetUnit) for unit in units)
         return [
             simple_unit
@@ -224,7 +226,7 @@ class ControlNetForForgeOfficial(scripts.Script):
 
             image = HWC3(image)
 
-            if using_a1111_data:
+            if using_a1111_data and a1111_i2i_mask is not None:
                 mask = HWC3(np.asarray(a1111_i2i_mask)) if a1111_i2i_mask is not None else None
             elif unit.mask_image is not None and (unit.mask_image['image'] > 5).any():
                 mask = unit.mask_image['image']
@@ -505,11 +507,17 @@ class ControlNetForForgeOfficial(scripts.Script):
             params.model.positive_advanced_weighting = soft_weighting.copy()
             params.model.negative_advanced_weighting = soft_weighting.copy()
 
+        model_process_start_time = time.perf_counter()
         cond, mask = params.preprocessor.process_before_every_sampling(p, cond, mask, *args, **kwargs)
+        model_process_end_time =  time.perf_counter() - model_process_start_time
+        logger.debug(f"CN Preprocessor {params.preprocessor.name}: {model_process_end_time:.2f}s.")
 
         params.model.advanced_mask_weighting = mask
+        model_process_start_time = time.perf_counter()
 
         params.model.process_before_every_sampling(p, cond, mask, *args, **kwargs)
+        model_process_end_time =  time.perf_counter() - model_process_start_time
+        logger.debug(f"CN Model {type(params.model).__name__}: {model_process_end_time:.2f}s.")
 
         logger.info(f"ControlNet Method {params.preprocessor.name} patched.")
         return
@@ -592,6 +600,8 @@ def on_ui_settings():
         {"minimum": 1, "maximum": 10, "step": 1}, section=section))
     shared.opts.add_option("control_net_model_cache_size", shared.OptionInfo(
         5, "Model cache size (requires restart)", gr.Slider, {"minimum": 1, "maximum": 10, "step": 1}, section=section))
+    shared.opts.add_option("control_net_ipadapter_cache_size", shared.OptionInfo(
+        5, "IPAdapter cache size (requires restart)", gr.Slider, {"minimum": 1, "maximum": 10, "step": 1}, section=section))    
     shared.opts.add_option("control_net_no_detectmap", shared.OptionInfo(
         False, "Do not append detectmap to output", gr.Checkbox, {"interactive": True}, section=section))
     shared.opts.add_option("control_net_detectmap_autosaving", shared.OptionInfo(
